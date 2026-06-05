@@ -1,0 +1,41 @@
+# ================================================
+#  NeuroMind AI — Python Dependencies
+#  Install: pip install -r requirements.txt
+# ================================================
+
+# ── Core AI ──────────────────────────────────────
+anthropic>=0.30.0              # Claude API client
+
+# ── Web UI Framework ─────────────────────────────
+streamlit>=1.35.0              # Main UI framework
+streamlit-extras>=0.4.0        # Extra Streamlit components
+
+# ── Data Processing ──────────────────────────────
+pandas>=2.0.0                  # Data manipulation
+numpy>=1.24.0                  # Numerical computing
+openpyxl>=3.1.0                # Excel file support
+
+# ── Visualizations ───────────────────────────────
+plotly>=5.18.0                 # Interactive charts
+matplotlib>=3.8.0              # Static charts
+seaborn>=0.13.0                # Statistical visualizations
+
+# ── Document Processing ──────────────────────────
+PyMuPDF>=1.23.0                # PDF reading (import as fitz)
+python-docx>=1.1.0             # Word document support
+
+# ── Image Processing ─────────────────────────────
+Pillow>=10.0.0                 # Image manipulation (PIL)
+
+# ── Utilities ────────────────────────────────────
+python-dotenv>=1.0.0           # Environment variable management
+pydantic>=2.0.0                # Data validation
+rich>=13.7.0                   # Beautiful terminal output
+tqdm>=4.66.0                   # Progress bars
+python-dateutil>=2.8.2         # Date utilities
+requests>=2.31.0               # HTTP requests
+
+# ── Testing ──────────────────────────────────────
+pytest>=7.4.0                  # Testing framework
+pytest-cov>=4.1.0              # Coverage reporting
+pytest-mock>=3.12.0            # Mocking support
