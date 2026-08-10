@@ -16,6 +16,9 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image
 
+# ── Fix Python Path for Streamlit Cloud ──────────────────────────────────────
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 # ── Page Config (must be first Streamlit call) ───────────────────────────────
 st.set_page_config(
     page_title="NeuroMind AI",
@@ -327,7 +330,6 @@ def get_ai_engine(mode: str = "chat"):
     if not st.session_state.api_key:
         return None
     try:
-        sys.path.insert(0, ".")
         from src.ai_core import NeuroMindAI
         engine = NeuroMindAI(mode=mode)
         return engine
@@ -529,7 +531,6 @@ render_header(current)
 # ════════════════════════════════════════════════════════════════════════════
 if current == "🤖 AI Chat":
 
-    # Display chat history
     chat_container = st.container()
     with chat_container:
         if not st.session_state.messages:
@@ -548,21 +549,17 @@ if current == "🤖 AI Chat":
                                      avatar="👤" if msg["role"] == "user" else "🧠"):
                     st.markdown(msg["content"])
 
-    # Chat input
     if prompt := st.chat_input("Ask NeuroMind AI anything...", key="chat_input"):
-        # Display user message
         with st.chat_message("user", avatar="👤"):
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Get AI response
         with st.chat_message("assistant", avatar="🧠"):
             with st.spinner("Thinking..."):
                 try:
                     from src.ai_core import NeuroMindAI
                     ai = NeuroMindAI(mode="chat")
 
-                    # Feed history to AI
                     for msg in st.session_state.messages[:-1]:
                         ai.conversation_history.append(msg)
 
@@ -638,7 +635,6 @@ elif current == "📄 Document Q&A":
     with col2:
         st.markdown("**💬 Ask About the Document**")
 
-        # Chat history
         for msg in st.session_state.messages[-10:]:
             with st.chat_message(msg["role"], avatar="👤" if msg["role"] == "user" else "📄"):
                 st.markdown(msg["content"])
@@ -735,11 +731,9 @@ elif current == "📊 Data Analyst":
         st.markdown("**💬 Ask About Your Data**")
 
         if st.session_state.data_df is not None:
-            # Show data preview
             with st.expander("👀 Data Preview (first 5 rows)"):
                 st.dataframe(st.session_state.data_df.head(), use_container_width=True)
 
-            # Quick actions
             col_a, col_b = st.columns(2)
             with col_a:
                 if st.button("🧠 AI Insights", use_container_width=True):
@@ -803,7 +797,6 @@ elif current == "🖼️ Image Analysis":
         if "current_image" not in st.session_state:
             st.info("👈 Upload an image to analyze")
         else:
-            # Quick analysis buttons
             cols = st.columns(2)
             quick_prompts = [
                 ("🔍 Describe", "Provide a detailed description of everything in this image."),
@@ -857,7 +850,6 @@ elif current == "💻 Code Assistant":
     st.markdown('<div class="upload-tip">💡 I can write, explain, debug, and optimize code in any language</div>',
                 unsafe_allow_html=True)
 
-    # Quick action buttons
     action_cols = st.columns(5)
     quick_actions = [
         ("✍️ Write Code", "Write"),
@@ -876,7 +868,6 @@ elif current == "💻 Code Assistant":
 
     action = st.session_state.get("code_action", "Write")
 
-    # Language selector + code input
     col1, col2 = st.columns([1, 3])
     with col1:
         language = st.selectbox(
