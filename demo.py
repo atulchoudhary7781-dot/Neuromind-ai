@@ -6,10 +6,13 @@ Run this to see NeuroMind AI in action from the terminal.
 Usage: python examples/demo.py
 """
 
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# ════════════════════════════════════════════════════════════════════════════════
+# CRITICAL: Path Setup (MUST be first - before any other imports)
+# ════════════════════════════════════════════════════════════════════════════════
+import os as _os, sys as _sys
+_SCRIPT_DIR = _os.path.dirname(_os.path.abspath(__file__))
+if _SCRIPT_DIR not in _sys.path:
+    _sys.path.insert(0, _SCRIPT_DIR)
 
 from rich.console import Console
 from rich.panel import Panel

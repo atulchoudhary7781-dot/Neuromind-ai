@@ -14,7 +14,7 @@ from typing import Generator
 
 import anthropic
 
-from config import APP_CONFIG, MODEL_CONFIG, SYSTEM_PROMPTS
+from .config import APP_CONFIG, MODEL_CONFIG, SYSTEM_PROMPTS
 
 
 class NeuroMindAI:

@@ -6,7 +6,14 @@ Tests for the NeuroMindAI class.
 Run: pytest tests/ -v
 """
 
-import os
+# ════════════════════════════════════════════════════════════════════════════════
+# CRITICAL: Path Setup (MUST be first - before any other imports)
+# ════════════════════════════════════════════════════════════════════════════════
+import os as _os, sys as _sys
+_SCRIPT_DIR = _os.path.dirname(_os.path.abspath(__file__))
+if _SCRIPT_DIR not in _sys.path:
+    _sys.path.insert(0, _SCRIPT_DIR)
+
 import pytest
 from unittest.mock import MagicMock, patch
 

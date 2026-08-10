@@ -393,5 +393,5 @@ If the question requires computation you can't do, explain what the result would
             return ""
 
     def _get_system_prompt(self) -> str:
-        from config import SYSTEM_PROMPTS
+        from .config import SYSTEM_PROMPTS
         return SYSTEM_PROMPTS["data_analyst"]

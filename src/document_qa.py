@@ -231,7 +231,7 @@ Identify and list:
         )
 
     def _get_system_prompt(self) -> str:
-        from config import SYSTEM_PROMPTS
+        from .config import SYSTEM_PROMPTS
         return SYSTEM_PROMPTS["document_qa"]
 
     def __repr__(self) -> str:

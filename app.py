@@ -6,18 +6,22 @@ Beautiful multi-modal AI assistant with dark theme.
 Run: streamlit run app.py
 """
 
+# ════════════════════════════════════════════════════════════════════════════════
+# CRITICAL: Path Setup (MUST be first - before any other imports)
+# This ensures 'from src.xxx import yyy' works regardless of execution location
+# ════════════════════════════════════════════════════════════════════════════════
+import os as _os, sys as _sys
+_SCRIPT_DIR = _os.path.dirname(_os.path.abspath(__file__))
+if _SCRIPT_DIR not in _sys.path:
+    _sys.path.insert(0, _SCRIPT_DIR)
+
 import io
-import os
-import sys
 import json
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 from PIL import Image
-
-# ── Fix Python Path for Streamlit Cloud ──────────────────────────────────────
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # ── Page Config (must be first Streamlit call) ───────────────────────────────
 st.set_page_config(
@@ -497,16 +501,24 @@ if not st.session_state.api_key:
         api_col = st.columns([1, 2, 1])[1]
         with api_col:
             key = st.text_input(
-                "API Key",
+                "🔑 API Key",
                 type="password",
                 placeholder="sk-ant-api03-...",
                 help="Get your free API key at console.anthropic.com",
             )
-            if key:
+            
+            # Enter Button - Below the input field
+            col_btn, col_space = st.columns([1, 2])
+            with col_btn:
+                submit = st.button("✅ Enter / Set API Key", type="primary")
+            
+            if submit and key:
                 st.session_state.api_key = key
                 os.environ["ANTHROPIC_API_KEY"] = key
-                st.success("✅ API key set! Ready to go.")
+                st.success("✅ API key set successfully! Restarting...")
                 st.rerun()
+            elif submit and not key:
+                st.error("❌ Please enter your API key first!")
 
             st.markdown("""
             <div style="text-align:center; margin-top:1rem;">
