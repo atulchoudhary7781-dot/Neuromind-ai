@@ -479,57 +479,81 @@ def render_header(module: str):
 
 
 # ── API Key Check ─────────────────────────────────────────────────────────────
-if not st.session_state.api_key:
+st.markdown("""
+<div class="neuromind-header">
+    <div class="neuromind-title">🧠 NeuroMind AI</div>
+    <div class="neuromind-subtitle">Multi-Modal Intelligence Platform</div>
+</div>
+""", unsafe_allow_html=True)
+
+# API Key Section - Always visible in sidebar or main area
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔑 API Key Setup")
+    st.markdown("<p style='font-size:0.85rem; color:#64748B;'>Enter any Anthropic API key to start</p>", unsafe_allow_html=True)
+    
+    # Current key status
+    if st.session_state.api_key:
+        st.success("✅ **API Key Connected!**")
+        st.caption(f"Key: ••••{st.session_state.api_key[-4:] if len(st.session_state.api_key) > 4 else '****'}")
+    
+    # API Key Input - Works with ANY key format
+    key = st.text_input(
+        "🔑 Anthropic API Key",
+        type="password",
+        value="" if not st.session_state.api_key else "•••••••••••••••••••",
+        placeholder="Paste any API key here...",
+        help="Supports all Anthropic key formats (sk-ant-*, sk-*, etc.)",
+        label_visibility="collapsed"
+    )
+    
+    # Buttons
+    btn_col1, btn_col2 = st.columns(2)
+    
+    with btn_col1:
+        if st.button("✅ Set Key", type="primary", use_container_width=True):
+            if key and not key.startswith("•"):
+                st.session_state.api_key = key
+                os.environ["ANTHROPIC_API_KEY"] = key
+                st.success("✅ API key saved! Restarting...")
+                st.rerun()
+            elif not key:
+                st.error("❌ Please paste an API key!")
+            else:
+                st.info("ℹ️ Paste a new key first, then click Set")
+    
+    with btn_col2:
+        if st.button("🗑️ Clear Key", use_container_width=True):
+            st.session_state.api_key = ""
+            os.environ["ANTHROPIC_API_KEY"] = ""
+            st.success("🗑️ Key cleared! Restarting...")
+            st.rerun()
+    
+    st.markdown("---")
     st.markdown("""
-    <div class="neuromind-header">
-        <div class="neuromind-title">🧠 NeuroMind AI</div>
-        <div class="neuromind-subtitle">Multi-Modal Intelligence Platform</div>
+    <div style="text-align:center; padding:0.5rem;">
+        <a href="https://console.anthropic.com/settings/keys"
+           target="_blank"
+           style="color:#A855F7; text-decoration:none; font-size:0.85rem;">
+            🔗 Get Free API Key →
+        </a>
     </div>
     """, unsafe_allow_html=True)
+    
+    st.caption("💡 Your key stays in this session only")
 
+# Stop if no API key
+if not st.session_state.api_key:
     st.markdown("""
-    <div style="max-width: 500px; margin: 2rem auto; text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">🔑</div>
-        <h3 style="color: #E2E8F0;">Enter Your API Key to Get Started</h3>
-        <p style="color: #64748B;">
-            NeuroMind AI needs an Anthropic API key to power its intelligence.
+    <div style="text-align:center; padding: 4rem 2rem;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">🔐</div>
+        <h2 style="color: #E2E8F0; margin-bottom: 1rem;">API Key Required</h2>
+        <p style="color: #64748B; max-width: 400px; margin: 0 auto;">
+            Please enter your Anthropic API key in the <b>sidebar</b> to continue.<br><br>
+            Don't have a key? <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#A855F7;">Get one free</a> ✨
         </p>
     </div>
     """, unsafe_allow_html=True)
-
-    with st.container():
-        api_col = st.columns([1, 2, 1])[1]
-        with api_col:
-            key = st.text_input(
-                "🔑 API Key",
-                type="password",
-                placeholder="sk-ant-api03-...",
-                help="Get your free API key at console.anthropic.com",
-            )
-            
-            # Enter Button - Below the input field
-            col_btn, col_space = st.columns([1, 2])
-            with col_btn:
-                submit = st.button("✅ Enter / Set API Key", type="primary")
-            
-            if submit and key:
-                st.session_state.api_key = key
-                os.environ["ANTHROPIC_API_KEY"] = key
-                st.success("✅ API key set successfully! Restarting...")
-                st.rerun()
-            elif submit and not key:
-                st.error("❌ Please enter your API key first!")
-
-            st.markdown("""
-            <div style="text-align:center; margin-top:1rem;">
-                <a href="https://console.anthropic.com"
-                   target="_blank"
-                   style="color:#A855F7; text-decoration:none; font-size:0.9rem;">
-                    🔗 Get API Key at console.anthropic.com →
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
-
     st.stop()
 
 
