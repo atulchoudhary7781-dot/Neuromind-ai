@@ -348,7 +348,10 @@ def get_ai_engine(mode: str = "chat"):
         return None
     try:
         from src.ai_core import NeuroMindAI
-        engine = NeuroMindAI(mode=mode)
+        engine = NeuroMindAI(mode=mode, api_key=st.session_state.api_key)
+        # Store provider info in session
+        st.session_state.ai_provider = engine.provider_name
+        st.session_state.ai_model = engine.model
         return engine
     except Exception as e:
         st.error(f"Failed to initialize AI: {e}")
@@ -501,25 +504,41 @@ st.markdown("""
 
 with st.sidebar:
     st.markdown("---")
-    st.markdown("### 🔑 API Key")
+    st.markdown("### 🔑 API Key & Provider")
     
-    # Show status
+    # Show status with provider info
     if st.session_state.api_key:
-        _is_env = bool(os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY"))
-        if _is_env:
-            st.success("✅ **Connected!** (From Environment)")
-            st.caption("🎉 Auto-configured - ready to use!")
+        # Detect provider from key
+        _key = st.session_state.api_key
+        if _key.startswith("gsk_"):
+            _provider = "🟢 Groq (FREE)"
+            _provider_info = "Llama 3.1 - Fast & Free!"
+        elif _key.startswith("sk-ant-"):
+            _provider = "🔵 Anthropic (Paid)"
+            _provider_info = "Claude - Premium AI"
         else:
-            st.success("✅ **API Key Connected!**")
-            st.caption(f"Key: ••••{st.session_state.api_key[-4:] if len(st.session_state.api_key) > 4 else '****'}")
+            _provider = "⚪ Unknown"
+            _provider_info = "Auto-detecting..."
+        
+        st.success(f"✅ **{_provider}**")
+        st.caption(f"📡 {_provider_info}")
+        st.caption(f"Key: ••••{_key[-4:] if len(_key) > 4 else '****'}")
+        
+        # Show model if initialized
+        if st.session_state.get("ai_model"):
+            st.caption(f"🤖 Model: {st.session_state.ai_model}")
     
     # Optional: Enter custom key
     with st.expander("⚙️ Change API Key (Optional)"):
+        st.markdown("**Supported Providers:**")
+        st.caption("• `gsk_*` → **Groq** (FREE!)")
+        st.caption("• `sk-ant-*` → **Anthropic** (Paid)")
+        
         custom_key = st.text_input(
             "🔑 Your API Key",
             type="password",
             placeholder="Paste new key here...",
-            help="Leave empty to keep current key",
+            help="Groq keys start with gsk_, Anthropic with sk-ant-",
         )
         
         c1, c2 = st.columns(2)
@@ -527,7 +546,11 @@ with st.sidebar:
             if st.button("✅ Set New Key", use_container_width=True):
                 if custom_key:
                     st.session_state.api_key = custom_key
-                    os.environ["ANTHROPIC_API_KEY"] = custom_key
+                    # Set appropriate env var
+                    if custom_key.startswith("gsk_"):
+                        os.environ["GROQ_API_KEY"] = custom_key
+                    else:
+                        os.environ["ANTHROPIC_API_KEY"] = custom_key
                     st.success("✅ Key updated!")
                     st.rerun()
                 else:
@@ -540,7 +563,9 @@ with st.sidebar:
                 st.rerun()
     
     st.markdown("---")
-    st.caption("💡 Keys loaded from: GROQ_API_KEY / ANTHROPIC_API_KEY")
+    st.caption("💡 Get free API keys:")
+    st.caption("🟢 [Groq (FREE)](https://console.groq.com/keys)")
+    st.caption("🔵 [Anthropic](https://console.anthropic.com/settings/keys)")
 
 # Stop if no API key
 if not st.session_state.api_key:
@@ -548,9 +573,10 @@ if not st.session_state.api_key:
     <div style="text-align:center; padding: 4rem 2rem;">
         <div style="font-size: 5rem; margin-bottom: 1rem;">🔐</div>
         <h2 style="color: #E2E8F0; margin-bottom: 1rem;">API Key Required</h2>
-        <p style="color: #64748B; max-width: 400px; margin: 0 auto;">
-            Please enter your Anthropic API key in the <b>sidebar</b> to continue.<br><br>
-            Don't have a key? <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#A855F7;">Get one free</a> ✨
+        <p style="color: #64748B; max-width: 450px; margin: 0 auto;">
+            Please enter an API key in the <b>sidebar</b> to continue.<br><br>
+            🟢 <b>Groq (FREE):</b> <a href="https://console.groq.com/keys" target="_blank" style="color:#10B981;">Get free key</a><br>
+            🔵 <b>Anthropic (Paid):</b> <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#A855F7;">Get key</a>
         </p>
     </div>
     """, unsafe_allow_html=True)
