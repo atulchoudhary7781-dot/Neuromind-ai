@@ -10,10 +10,10 @@ Run: streamlit run app.py
 # CRITICAL: Path Setup (MUST be first - before any other imports)
 # This ensures 'from src.xxx import yyy' works regardless of execution location
 # ════════════════════════════════════════════════════════════════════════════════
-import os as _os, sys as _sys
-_SCRIPT_DIR = _os.path.dirname(_os.path.abspath(__file__))
-if _SCRIPT_DIR not in _sys.path:
-    _sys.path.insert(0, _SCRIPT_DIR)
+import os, sys
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
 
 import io
 import json
