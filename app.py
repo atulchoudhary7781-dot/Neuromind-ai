@@ -306,16 +306,15 @@ hr { border-color: #1E293B !important; }
 """, unsafe_allow_html=True)
 
 
-# ── DEFAULT GROQ API KEY (Pre-configured - Users don't need to enter!) ────────
-# This key is loaded from environment or falls back to default
-_DEFAULT_GROQ_KEY = os.getenv("GROQ_API_KEY", "")
+# ── DEFAULT API KEY (Pre-configured - Users don't need to enter!) ────────
+# Priority: OpenRouter > Groq > Anthropic
+_DEFAULT_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY", "")
 
 def get_api_key():
     """Get API key - always returns a key (default or user-set)."""
-    # Priority: User session key > Environment > Default
     if st.session_state.get("api_key"):
         return st.session_state.api_key
-    return _DEFAULT_GROQ_KEY or os.getenv("ANTHROPIC_API_KEY") or ""
+    return _DEFAULT_KEY
 
 # ── Initialize Session State ─────────────────────────────────────────────────
 def init_session_state():
@@ -515,10 +514,14 @@ with st.sidebar:
     _key = st.session_state.get("api_key", "")
     if _key:
         # Detect and show provider
-        if _key.startswith("gsk_"):
-            st.markdown("### 🟢 Groq (FREE)")
-            st.caption("🤖 Llama 3.1 70B - Ready!")
+        if _key.startswith("sk-or-v1"):
+            st.markdown("### 🌐 OpenRouter")
+            st.caption("🤖 Multi-Model Access!")
             st.success("✅ **Connected & Ready!**")
+        elif _key.startswith("gsk_"):
+            st.markdown("### 🟢 Groq (FREE)")
+            st.caption("🤖 Llama 3.1 - Fast & Free!")
+            st.success("✅ **Connected!**")
         elif _key.startswith("sk-ant-"):
             st.markdown("### 🔵 Anthropic")
             st.caption("🤖 Claude - Premium AI")
@@ -534,7 +537,10 @@ with st.sidebar:
     
     # Optional: Change key (collapsed by default)
     with st.expander("⚙️ Change API Key (Optional)"):
-        st.caption("**Supported:** `gsk_*` (Groq FREE) or `sk-ant-*` (Anthropic)")
+        st.caption("**Supported Providers:**")
+        st.caption("🌐 `sk-or-v1-*` → **OpenRouter** (Recommended!)")
+        st.caption("🟢 `gsk_*` → **Groq** (FREE)")
+        st.caption("🔵 `sk-ant-*` → **Anthropic** (Paid)")
         
         _new_key = st.text_input(
             "New API Key",
@@ -547,7 +553,10 @@ with st.sidebar:
             if st.button("✅ Update Key", use_container_width=True, key="update_key_btn"):
                 if _new_key:
                     st.session_state.api_key = _new_key
-                    if _new_key.startswith("gsk_"):
+                    # Set appropriate env var
+                    if _new_key.startswith("sk-or-v1"):
+                        os.environ["OPENROUTER_API_KEY"] = _new_key
+                    elif _new_key.startswith("gsk_"):
                         os.environ["GROQ_API_KEY"] = _new_key
                     else:
                         os.environ["ANTHROPIC_API_KEY"] = _new_key
@@ -562,7 +571,9 @@ with st.sidebar:
                 st.rerun()
     
     st.markdown("---")
-    st.caption("💡 [Get Free Groq Key](https://console.groq.com/keys)")
+    st.caption("💡 Get API Keys:")
+    st.caption("🌐 [OpenRouter](https://openrouter.ai/keys) (Best!)")
+    st.caption("🟢 [Groq](https://console.groq.com/keys) (Free)")
 
 # NOTE: No more blocking! User goes directly to chat even without key
 # (AI features just won't work until key is set)

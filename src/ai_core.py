@@ -1,11 +1,12 @@
 """
 NeuroMind AI — Core AI Engine (Multi-Provider Support)
 ========================================================
-Supports BOTH Anthropic Claude AND Groq APIs.
+Supports Anthropic Claude, Groq, AND OpenRouter APIs!
 
 Providers:
-- Anthropic: Uses anthropic SDK (sk-ant-* keys)
+- OpenRouter: Uses OpenAI-compatible API (sk-or-v1-* keys) - RECOMMENDED!
 - Groq: Uses groq SDK (gsk_* keys) - FREE & FAST!
+- Anthropic: Uses anthropic SDK (sk-ant-* keys)
 
 Author: NeuroMind AI Team
 """
@@ -16,18 +17,22 @@ import time
 from pathlib import Path
 from typing import Generator, Optional
 
+import requests
+
 from .config import APP_CONFIG, MODEL_CONFIG, SYSTEM_PROMPTS
 
 
 def _detect_provider(api_key: str) -> str:
     """Detect API provider from key format."""
-    if api_key.startswith("gsk_"):
+    if api_key.startswith("sk-or-v1"):
+        return "openrouter"
+    elif api_key.startswith("gsk_"):
         return "groq"
     elif api_key.startswith("sk-ant-"):
         return "anthropic"
     else:
-        # Default to anthropic for other formats
-        return os.getenv("AI_PROVIDER", "anthropic")
+        # Default to openrouter for other formats
+        return os.getenv("AI_PROVIDER", "openrouter")
 
 
 class NeuroMindAI:
@@ -35,8 +40,9 @@ class NeuroMindAI:
     Core AI engine for NeuroMind AI - Multi-provider support!
 
     Supports:
-    - Anthropic Claude (paid, powerful)
+    - OpenRouter (RECOMMENDED - many free models!)
     - Groq (FREE, fast, Llama/Mixtral models)
+    - Anthropic Claude (paid, powerful)
 
     Example:
         >>> ai = NeuroMindAI()  # Auto-detects provider from key
@@ -53,15 +59,20 @@ class NeuroMindAI:
                   'image_analyst', 'code_assistant'
             api_key: Optional API key (falls back to env/config)
         """
-        self.api_key = api_key or APP_CONFIG.api_key or os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        self.api_key = (api_key or APP_CONFIG.api_key or 
+                       os.getenv("OPENROUTER_API_KEY") or 
+                       os.getenv("GROQ_API_KEY") or 
+                       os.getenv("ANTHROPIC_API_KEY"))
         
         if not self.api_key:
             raise ValueError(
                 "❌ No API key found!\n"
-                "Set GROQ_API_KEY or ANTHROPIC_API_KEY in:\n"
-                "  - .env file\n"
-                "  - Streamlit Cloud Secrets\n"
+                "Set one of these in .env or Streamlit Secrets:\n"
+                "  - OPENROUTER_API_KEY (Recommended!)\n"
+                "  - GROQ_API_KEY\n"
+                "  - ANTHROPIC_API_KEY\n"
                 "\nGet keys:\n"
+                "  - OpenRouter: https://openrouter.ai/keys\n"
                 "  - Groq (FREE): https://console.groq.com/keys\n"
                 "  - Anthropic: https://console.anthropic.com"
             )
@@ -73,26 +84,44 @@ class NeuroMindAI:
         self._total_tokens_used: int = 0
 
         # Initialize appropriate client
-        if self.provider == "groq":
+        if self.provider == "openrouter":
+            self._init_openrouter_client()
+        elif self.provider == "groq":
             self._init_groq_client()
         else:
             self._init_anthropic_client()
+
+    def _init_openrouter_client(self):
+        """Initialize OpenRouter client (BEST OPTION - Many free models!)."""
+        self.base_url = "https://openrouter.ai/api/v1"
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.getenv("APP_URL", "https://neuromind-ai.streamlit.app"),
+            "X-Title": "NeuroMind AI"
+        }
+        # Default model for OpenRouter
+        self.model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+        self.max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
+        self.is_openrouter = True
+        self.is_groq = False
+        print(f"✅ OpenRouter client initialized | Model: {self.model}")
 
     def _init_groq_client(self):
         """Initialize Groq client (FREE tier available!)."""
         try:
             from groq import Groq
             self.client = Groq(api_key=self.api_key)
-            # Groq model mapping
             self.model = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
             self.max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
             self.is_groq = True
+            self.is_openrouter = False
             print(f"✅ Groq client initialized | Model: {self.model}")
         except ImportError:
             raise ImportError(
                 "❌ Groq package not installed!\n"
                 "Run: pip install groq\n"
-                "Or use an Anthropic API key instead."
+                "Or use an OpenRouter/Anthropic API key instead."
             )
 
     def _init_anthropic_client(self):
@@ -103,31 +132,29 @@ class NeuroMindAI:
             self.model = MODEL_CONFIG.name
             self.max_tokens = MODEL_CONFIG.max_tokens
             self.is_groq = False
+            self.is_openrouter = False
             print(f"✅ Anthropic client initialized | Model: {self.model}")
         except ImportError:
             raise ImportError(
                 "❌ Anthropic package not installed!\n"
                 "Run: pip install anthropic\n"
-                "Or use a Groq API key instead."
+                "Or use a Groq/OpenRouter API key instead."
             )
 
     @property
     def provider_name(self) -> str:
         """Get human-readable provider name."""
-        return "Groq (FREE)" if self.is_groq else "Anthropic"
+        if self.is_openrouter:
+            return "OpenRouter (Multi-Model)"
+        elif self.is_groq:
+            return "Groq (FREE)"
+        return "Anthropic"
 
     # ── Public Interface ─────────────────────────────────────────────────────
 
     def chat(self, user_message: str, context: str = "") -> str:
         """
         Send a message and get a response.
-
-        Args:
-            user_message: The user's input message
-            context: Optional additional context (e.g., document content)
-
-        Returns:
-            The AI's response as a string
         """
         full_message = f"{context}\n\n{user_message}" if context else user_message
 
@@ -141,7 +168,9 @@ class NeuroMindAI:
         self._trim_history()
 
         try:
-            if self.is_groq:
+            if self.is_openrouter:
+                response = self._openrouter_chat()
+            elif self.is_groq:
                 response = self._groq_chat()
             else:
                 response = self._anthropic_chat()
@@ -157,19 +186,35 @@ class NeuroMindAI:
             else:
                 raise RuntimeError(f"🔧 API error ({self.provider_name}): {str(e)}")
 
-    def _anthropic_chat(self) -> str:
-        """Chat using Anthropic API."""
-        import anthropic
+    def _openrouter_chat(self) -> str:
+        """Chat using OpenRouter API (OpenAI-compatible)."""
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            *self.conversation_history
+        ]
         
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            system=self.system_prompt,
-            messages=self.conversation_history
-        )
+        data = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": self.max_tokens
+        }
 
-        assistant_message = response.content[0].text
-        self._total_tokens_used += response.usage.input_tokens + response.usage.output_tokens
+        response = requests.post(
+            f"{self.base_url}/chat/completions",
+            headers=self.headers,
+            json=data,
+            timeout=60
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"OpenRouter API error {response.status_code}: {response.text}")
+        
+        result = response.json()
+        assistant_message = result["choices"][0]["message"]["content"]
+        
+        # Track tokens
+        usage = result.get("usage", {})
+        self._total_tokens_used += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
 
         # Save assistant response to history
         self.conversation_history.append({
@@ -201,20 +246,76 @@ class NeuroMindAI:
 
         return assistant_message
 
+    def _anthropic_chat(self) -> str:
+        """Chat using Anthropic API."""
+        import anthropic
+        
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=self.system_prompt,
+            messages=self.conversation_history
+        )
+
+        assistant_message = response.content[0].text
+        self._total_tokens_used += response.usage.input_tokens + response.usage.output_tokens
+
+        # Save assistant response to history
+        self.conversation_history.append({
+            "role": "assistant",
+            "content": assistant_message
+        })
+
+        return assistant_message
+
     def chat_with_image(self, user_message: str, image_path: str) -> str:
         """
         Send a message with an image for visual analysis.
-        
-        Note: Image analysis works best with Anthropic/Vision models.
-        Groq has limited vision support.
         """
         image_data, media_type = self._encode_image(image_path)
 
-        if self.is_groq:
-            # Groq vision (limited support)
+        if self.is_openrouter:
+            return self._openrouter_vision(user_message, image_data, media_type)
+        elif self.is_groq:
             return self._groq_vision(user_message, image_data, media_type)
         else:
             return self._anthropic_vision(user_message, image_data, media_type)
+
+    def _openrouter_vision(self, user_message: str, image_data: str, media_type: str) -> str:
+        """Vision analysis using OpenRouter."""
+        vision_model = os.getenv("OPENROUTER_VISION_MODEL", "openai/gpt-4o-mini")
+        
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPTS["image_analyst"]},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{media_type};base64,{image_data}"}
+                    },
+                    {"type": "text", "text": user_message}
+                ]
+            }
+        ]
+
+        data = {
+            "model": vision_model,
+            "messages": messages,
+            "max_tokens": self.max_tokens
+        }
+
+        response = requests.post(
+            f"{self.base_url}/chat/completions",
+            headers=self.headers,
+            json=data,
+            timeout=60
+        )
+
+        if response.status_code != 200:
+            raise Exception(f"Vision API error: {response.status_code}")
+
+        return response.json()["choices"][0]["message"]["content"]
 
     def _anthropic_vision(self, user_message: str, image_data: str, media_type: str) -> str:
         """Vision analysis using Anthropic."""
@@ -240,9 +341,8 @@ class NeuroMindAI:
         return response.content[0].text
 
     def _groq_vision(self, user_message: str, image_data: str, media_type: str) -> str:
-        """Vision analysis using Groq (if supported, otherwise text-only fallback)."""
+        """Vision analysis using Groq (limited support)."""
         try:
-            # Try vision-capable Groq model
             vision_model = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
             
             response = self.client.chat.completions.create(
@@ -261,20 +361,32 @@ class NeuroMindAI:
             )
             return response.choices[0].message.content
         except Exception as e:
-            # Fallback: Describe without image
             return f"⚠️ {self.provider_name} has limited vision support.\n\n{self.quick_ask(user_message)}"
 
     def chat_with_image_bytes(self, user_message: str, image_bytes: bytes, media_type: str = "image/png") -> str:
         """Send a message with image bytes (from file upload)."""
         image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
-        return self.chat_with_image(user_message, image_data)  # Will encode properly
+        return self.chat_with_image(user_message, image_data)
 
     def quick_ask(self, prompt: str, system: str = "") -> str:
-        """
-        One-shot question without conversation history.
-        Useful for analysis tasks.
-        """
-        if self.is_groq:
+        """One-shot question without conversation history."""
+        if self.is_openrouter:
+            data = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system or self.system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": self.max_tokens
+            }
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self.headers,
+                json=data,
+                timeout=60
+            )
+            return response.json()["choices"][0]["message"]["content"]
+        elif self.is_groq:
             response = self.client.chat.completions.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
@@ -323,7 +435,6 @@ class NeuroMindAI:
         """Keep conversation history within token limits."""
         max_turns = APP_CONFIG.max_memory_turns * 2  # Each turn = user + assistant
         if len(self.conversation_history) > max_turns:
-            # Keep the most recent turns
             self.conversation_history = self.conversation_history[-max_turns:]
 
     def _encode_image(self, image_path: str) -> tuple[str, str]:
@@ -350,16 +461,15 @@ class NeuroMindAI:
 # ── Convenience Factory Functions ────────────────────────────────────────────
 
 def create_ai_engine(mode: str = "chat", api_key: Optional[str] = None) -> NeuroMindAI:
-    """
-    Factory function to create an AI engine with auto-provider detection.
-    
-    Args:
-        mode: AI mode (chat, document_qa, etc.)
-        api_key: Optional API key (auto-detects if not provided)
-    
-    Returns:
-        Configured NeuroMindAI instance
-    """
+    """Factory function to create an AI engine with auto-provider detection."""
+    return NeuroMindAI(mode=mode, api_key=api_key)
+
+
+def create_openrouter_engine(mode: str = "chat") -> NeuroMindAI:
+    """Create an AI engine specifically using OpenRouter."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("❌ OPENROUTER_API_KEY not found in environment!")
     return NeuroMindAI(mode=mode, api_key=api_key)
 
 

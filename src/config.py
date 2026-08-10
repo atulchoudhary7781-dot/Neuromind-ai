@@ -26,7 +26,7 @@ class AppConfig:
     title: str = field(default_factory=lambda: os.getenv("APP_TITLE", "NeuroMind AI"))
     max_memory_turns: int = field(default_factory=lambda: int(os.getenv("MAX_MEMORY_TURNS", "20")))
     max_file_size_mb: int = field(default_factory=lambda: int(os.getenv("MAX_FILE_SIZE_MB", "10")))
-    api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY", ""))
+    api_key: str = field(default_factory=lambda: os.getenv("OPENROUTER_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY", ""))
 
     # Feature flags
     enable_image_analysis: bool = field(
