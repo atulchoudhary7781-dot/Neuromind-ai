@@ -306,11 +306,18 @@ hr { border-color: #1E293B !important; }
 """, unsafe_allow_html=True)
 
 
+# ── API Key from Environment (Streamlit Cloud / .env) ────────────────────────
+def get_api_key():
+    """Get API key from env or session. Priority: Session > GROQ > ANTHROPIC"""
+    if st.session_state.get("api_key"):
+        return st.session_state.api_key
+    return os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or ""
+
 # ── Initialize Session State ─────────────────────────────────────────────────
 def init_session_state():
     defaults = {
         "messages": [],
-        "api_key": os.getenv("ANTHROPIC_API_KEY", ""),
+        "api_key": "",  # Will be set from env below
         "current_module": "🤖 AI Chat",
         "document_content": "",
         "document_name": "",
@@ -323,6 +330,12 @@ def init_session_state():
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
+    
+    # Auto-set API key from environment if not in session
+    if not st.session_state.api_key:
+        _env_key = get_api_key()
+        if _env_key:
+            st.session_state.api_key = _env_key
 
 
 init_session_state()
@@ -478,7 +491,7 @@ def render_header(module: str):
     """, unsafe_allow_html=True)
 
 
-# ── API Key Check ─────────────────────────────────────────────────────────────
+# ── API Key Section (Auto from Env or Manual) ────────────────────────────────
 st.markdown("""
 <div class="neuromind-header">
     <div class="neuromind-title">🧠 NeuroMind AI</div>
@@ -486,61 +499,48 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# API Key Section - Always visible in sidebar or main area
 with st.sidebar:
     st.markdown("---")
-    st.markdown("### 🔑 API Key Setup")
-    st.markdown("<p style='font-size:0.85rem; color:#64748B;'>Enter any Anthropic API key to start</p>", unsafe_allow_html=True)
+    st.markdown("### 🔑 API Key")
     
-    # Current key status
+    # Show status
     if st.session_state.api_key:
-        st.success("✅ **API Key Connected!**")
-        st.caption(f"Key: ••••{st.session_state.api_key[-4:] if len(st.session_state.api_key) > 4 else '****'}")
+        _is_env = bool(os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY"))
+        if _is_env:
+            st.success("✅ **Connected!** (From Environment)")
+            st.caption("🎉 Auto-configured - ready to use!")
+        else:
+            st.success("✅ **API Key Connected!**")
+            st.caption(f"Key: ••••{st.session_state.api_key[-4:] if len(st.session_state.api_key) > 4 else '****'}")
     
-    # API Key Input - Works with ANY key format
-    key = st.text_input(
-        "🔑 Anthropic API Key",
-        type="password",
-        value="" if not st.session_state.api_key else "•••••••••••••••••••",
-        placeholder="Paste any API key here...",
-        help="Supports all Anthropic key formats (sk-ant-*, sk-*, etc.)",
-        label_visibility="collapsed"
-    )
-    
-    # Buttons
-    btn_col1, btn_col2 = st.columns(2)
-    
-    with btn_col1:
-        if st.button("✅ Set Key", type="primary", use_container_width=True):
-            if key and not key.startswith("•"):
-                st.session_state.api_key = key
-                os.environ["ANTHROPIC_API_KEY"] = key
-                st.success("✅ API key saved! Restarting...")
+    # Optional: Enter custom key
+    with st.expander("⚙️ Change API Key (Optional)"):
+        custom_key = st.text_input(
+            "🔑 Your API Key",
+            type="password",
+            placeholder="Paste new key here...",
+            help="Leave empty to keep current key",
+        )
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("✅ Set New Key", use_container_width=True):
+                if custom_key:
+                    st.session_state.api_key = custom_key
+                    os.environ["ANTHROPIC_API_KEY"] = custom_key
+                    st.success("✅ Key updated!")
+                    st.rerun()
+                else:
+                    st.info("ℹ️ Enter a key first")
+        
+        with c2:
+            if st.button("🔄 Reset to Env", use_container_width=True):
+                st.session_state.api_key = get_api_key()
+                st.success("🔄 Reset to environment key!")
                 st.rerun()
-            elif not key:
-                st.error("❌ Please paste an API key!")
-            else:
-                st.info("ℹ️ Paste a new key first, then click Set")
-    
-    with btn_col2:
-        if st.button("🗑️ Clear Key", use_container_width=True):
-            st.session_state.api_key = ""
-            os.environ["ANTHROPIC_API_KEY"] = ""
-            st.success("🗑️ Key cleared! Restarting...")
-            st.rerun()
     
     st.markdown("---")
-    st.markdown("""
-    <div style="text-align:center; padding:0.5rem;">
-        <a href="https://console.anthropic.com/settings/keys"
-           target="_blank"
-           style="color:#A855F7; text-decoration:none; font-size:0.85rem;">
-            🔗 Get Free API Key →
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.caption("💡 Your key stays in this session only")
+    st.caption("💡 Keys loaded from: GROQ_API_KEY / ANTHROPIC_API_KEY")
 
 # Stop if no API key
 if not st.session_state.api_key:
