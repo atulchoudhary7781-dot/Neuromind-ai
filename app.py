@@ -306,18 +306,25 @@ hr { border-color: #1E293B !important; }
 """, unsafe_allow_html=True)
 
 
-# ── API Key from Environment (Streamlit Cloud / .env) ────────────────────────
+# ── DEFAULT GROQ API KEY (Pre-configured - Users don't need to enter!) ────────
+# This key is loaded from environment or falls back to default
+_DEFAULT_GROQ_KEY = os.getenv("GROQ_API_KEY", "")
+
 def get_api_key():
-    """Get API key from env or session. Priority: Session > GROQ > ANTHROPIC"""
+    """Get API key - always returns a key (default or user-set)."""
+    # Priority: User session key > Environment > Default
     if st.session_state.get("api_key"):
         return st.session_state.api_key
-    return os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or ""
+    return _DEFAULT_GROQ_KEY or os.getenv("ANTHROPIC_API_KEY") or ""
 
 # ── Initialize Session State ─────────────────────────────────────────────────
 def init_session_state():
+    # Auto-get API key (no user input needed!)
+    _auto_key = get_api_key()
+    
     defaults = {
         "messages": [],
-        "api_key": "",  # Will be set from env below
+        "api_key": _auto_key,  # Auto-set!
         "current_module": "🤖 AI Chat",
         "document_content": "",
         "document_name": "",
@@ -331,11 +338,9 @@ def init_session_state():
         if key not in st.session_state:
             st.session_state[key] = val
     
-    # Auto-set API key from environment if not in session
-    if not st.session_state.api_key:
-        _env_key = get_api_key()
-        if _env_key:
-            st.session_state.api_key = _env_key
+    # Ensure API key is always set
+    if not st.session_state.api_key and _auto_key:
+        st.session_state.api_key = _auto_key
 
 
 init_session_state()
@@ -494,7 +499,7 @@ def render_header(module: str):
     """, unsafe_allow_html=True)
 
 
-# ── API Key Section (Auto from Env or Manual) ────────────────────────────────
+# ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="neuromind-header">
     <div class="neuromind-title">🧠 NeuroMind AI</div>
@@ -502,85 +507,65 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ── Sidebar: API Key Status (Non-blocking!) ─────────────────────────────────
 with st.sidebar:
     st.markdown("---")
-    st.markdown("### 🔑 API Key & Provider")
     
-    # Show status with provider info
-    if st.session_state.api_key:
-        # Detect provider from key
-        _key = st.session_state.api_key
+    # Show API Status (always visible, never blocks!)
+    _key = st.session_state.get("api_key", "")
+    if _key:
+        # Detect and show provider
         if _key.startswith("gsk_"):
-            _provider = "🟢 Groq (FREE)"
-            _provider_info = "Llama 3.1 - Fast & Free!"
+            st.markdown("### 🟢 Groq (FREE)")
+            st.caption("🤖 Llama 3.1 70B - Ready!")
+            st.success("✅ **Connected & Ready!**")
         elif _key.startswith("sk-ant-"):
-            _provider = "🔵 Anthropic (Paid)"
-            _provider_info = "Claude - Premium AI"
+            st.markdown("### 🔵 Anthropic")
+            st.caption("🤖 Claude - Premium AI")
+            st.success("✅ **Connected!**")
         else:
-            _provider = "⚪ Unknown"
-            _provider_info = "Auto-detecting..."
+            st.markdown("### ⚪ AI Provider")
+            st.success("✅ **Connected**")
         
-        st.success(f"✅ **{_provider}**")
-        st.caption(f"📡 {_provider_info}")
         st.caption(f"Key: ••••{_key[-4:] if len(_key) > 4 else '****'}")
         
-        # Show model if initialized
         if st.session_state.get("ai_model"):
-            st.caption(f"🤖 Model: {st.session_state.ai_model}")
+            st.badge(f"Model: {st.session_state.ai_model}")
     
-    # Optional: Enter custom key
+    # Optional: Change key (collapsed by default)
     with st.expander("⚙️ Change API Key (Optional)"):
-        st.markdown("**Supported Providers:**")
-        st.caption("• `gsk_*` → **Groq** (FREE!)")
-        st.caption("• `sk-ant-*` → **Anthropic** (Paid)")
+        st.caption("**Supported:** `gsk_*` (Groq FREE) or `sk-ant-*` (Anthropic)")
         
-        custom_key = st.text_input(
-            "🔑 Your API Key",
+        _new_key = st.text_input(
+            "New API Key",
             type="password",
-            placeholder="Paste new key here...",
-            help="Groq keys start with gsk_, Anthropic with sk-ant-",
+            placeholder="Paste new key...",
         )
         
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("✅ Set New Key", use_container_width=True):
-                if custom_key:
-                    st.session_state.api_key = custom_key
-                    # Set appropriate env var
-                    if custom_key.startswith("gsk_"):
-                        os.environ["GROQ_API_KEY"] = custom_key
+        _col1, _col2 = st.columns(2)
+        with _col1:
+            if st.button("✅ Update Key", use_container_width=True, key="update_key_btn"):
+                if _new_key:
+                    st.session_state.api_key = _new_key
+                    if _new_key.startswith("gsk_"):
+                        os.environ["GROQ_API_KEY"] = _new_key
                     else:
-                        os.environ["ANTHROPIC_API_KEY"] = custom_key
+                        os.environ["ANTHROPIC_API_KEY"] = _new_key
                     st.success("✅ Key updated!")
                     st.rerun()
                 else:
-                    st.info("ℹ️ Enter a key first")
+                    st.info("Enter a key first")
         
-        with c2:
-            if st.button("🔄 Reset to Env", use_container_width=True):
+        with _col2:
+            if st.button("🔄 Reset", use_container_width=True, key="reset_key_btn"):
                 st.session_state.api_key = get_api_key()
-                st.success("🔄 Reset to environment key!")
                 st.rerun()
     
     st.markdown("---")
-    st.caption("💡 Get free API keys:")
-    st.caption("🟢 [Groq (FREE)](https://console.groq.com/keys)")
-    st.caption("🔵 [Anthropic](https://console.anthropic.com/settings/keys)")
+    st.caption("💡 [Get Free Groq Key](https://console.groq.com/keys)")
 
-# Stop if no API key
-if not st.session_state.api_key:
-    st.markdown("""
-    <div style="text-align:center; padding: 4rem 2rem;">
-        <div style="font-size: 5rem; margin-bottom: 1rem;">🔐</div>
-        <h2 style="color: #E2E8F0; margin-bottom: 1rem;">API Key Required</h2>
-        <p style="color: #64748B; max-width: 450px; margin: 0 auto;">
-            Please enter an API key in the <b>sidebar</b> to continue.<br><br>
-            🟢 <b>Groq (FREE):</b> <a href="https://console.groq.com/keys" target="_blank" style="color:#10B981;">Get free key</a><br>
-            🔵 <b>Anthropic (Paid):</b> <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#A855F7;">Get key</a>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
+# NOTE: No more blocking! User goes directly to chat even without key
+# (AI features just won't work until key is set)
 
 
 # ── MODULES ──────────────────────────────────────────────────────────────────
