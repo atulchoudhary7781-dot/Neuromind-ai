@@ -308,7 +308,7 @@ hr { border-color: #1E293B !important; }
 
 # ── DEFAULT API KEY (Pre-configured - Users don't need to enter!) ────────
 # Priority: OpenRouter > Groq > Anthropic
-_DEFAULT_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("ANTHROPIC_API_KEY", "")
+_DEFAULT_KEY = os.getenv("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")
 
 def get_api_key():
     """Get API key - always returns a key (default or user-set)."""
