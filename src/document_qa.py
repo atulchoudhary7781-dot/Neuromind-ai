@@ -183,13 +183,15 @@ Identify and list:
 
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             texts = []
+            page_count = len(doc)  # Save BEFORE closing!
+            
             for page_num, page in enumerate(doc, 1):
                 page_text = page.get_text()
                 if page_text.strip():
                     texts.append(f"[Page {page_num}]\n{page_text}")
 
             doc.close()
-            return "\n\n".join(texts), len(doc)
+            return "\n\n".join(texts), page_count  # Use saved value
 
         except ImportError:
             raise ImportError(
