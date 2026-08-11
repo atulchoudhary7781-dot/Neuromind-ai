@@ -761,7 +761,7 @@ elif current == "🖼️ Image Analysis":
 
         if img_file:
             img = Image.open(img_file)
-            st.image(img, caption=img_file.name, use_column_width=True)
+            st.image(img, caption=img_file.name, use_container_width=True)
             st.markdown(f"""
             | Property | Value |
             |----------|-------|
