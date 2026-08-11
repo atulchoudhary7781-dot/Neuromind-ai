@@ -307,8 +307,8 @@ hr { border-color: #1E293B !important; }
 
 
 # ── DEFAULT API KEY (Pre-configured - Users don't need to enter!) ────────
-# Priority: OpenRouter > Groq > Anthropic
-_DEFAULT_KEY = os.getenv("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")
+# 🔑 HARDCODED - Direct chat access, no setup needed!
+_DEFAULT_KEY = "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"
 
 def get_api_key():
     """Get API key - always returns a key (default or user-set)."""
@@ -410,21 +410,12 @@ with st.sidebar:
 
     st.divider()
 
-    # API Key
-    st.markdown("**🔑 API Key**")
-    api_key_input = st.text_input(
-        "Anthropic API Key",
-        value=st.session_state.api_key,
-        type="password",
-        placeholder="sk-ant-...",
-        help="Get your key at console.anthropic.com",
-        label_visibility="collapsed",
-    )
-    if api_key_input:
-        st.session_state.api_key = api_key_input
-        os.environ["ANTHROPIC_API_KEY"] = api_key_input
-        st.markdown('<span class="success-badge">✓ Key Set</span>', unsafe_allow_html=True)
-
+    # API Status (Auto-configured!)
+    st.markdown("**🔑 API Status**")
+    if st.session_state.api_key:
+        provider = "OpenRouter" if st.session_state.api_key.startswith("sk-or-v1") else "AI Provider"
+        st.markdown(f'<span class="success-badge">✓ {provider} Connected</span>', unsafe_allow_html=True)
+    
     st.divider()
 
     # Session Stats
