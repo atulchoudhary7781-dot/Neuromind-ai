@@ -11,18 +11,20 @@
 
 # 🧠 NeuroMind AI — Multi-Modal Intelligence Platform
 
-**Your all-in-one AI-powered research, analysis & assistant platform built with Python + Claude API**
+**Your all-in-one AI-powered research, analysis & assistant platform**
 
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Click_Here-success?style=for-the-badge&logo=streamlit&logoColor=white)](https://i9fm8n3pz2wn67bkro5y2q.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![Anthropic](https://img.shields.io/badge/Claude-API-8A2BE2?style=for-the-badge&logo=anthropic&logoColor=white)](https://www.anthropic.com/)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter_API-Multi_Model-orange?style=for-the-badge)](https://openrouter.ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
-[![Stars](https://img.shields.io/github/stars/yourusername/neuromind-ai?style=for-the-badge&color=gold)](https://github.com/yourusername/neuromind-ai)
 
 ---
 
 > **NeuroMind AI** is a production-grade, multi-modal AI assistant platform that combines conversational AI, document understanding, intelligent data analysis, image recognition, and code assistance — all in one beautiful interface.
+>
+> 🔗 **[Try it live now!](https://i9fm8n3pz2wn67bkro5y2q.streamlit.app/)** — No setup required!
 
 </div>
 
@@ -43,7 +45,15 @@
 
 ---
 
-## 🖥️ Demo Screenshots
+## 🌐 Live Demo
+
+👉 **[**Try NeuroMind AI Now →**](https://i9fm8n3pz2wn67bkro5y2q.streamlit.app/)**
+
+No installation required! Just click and start chatting with AI.
+
+---
+
+## 🖥️ App Preview
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -85,27 +95,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Set Up Environment Variables
+### 4. Run the App (API Key Pre-configured!)
 ```bash
-cp .env.example .env
-# Edit .env and add your Anthropic API key
-```
-
-### 5. Run the App
-```bash
+# The app comes with pre-configured API key!
+# Just run:
 streamlit run app.py
 ```
+
+🎉 **Or use it online:** [https://i9fm8n3pz2wn67bkro5y2q.streamlit.app/](https://i9fm8n3pz2wn67bkro5y2q.streamlit.app/)
 
 🎉 Open your browser at `http://localhost:8501`
 
 ---
 
-## 🔑 Getting Your API Key
+## 🔑 API Configuration
 
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign up / Login
-3. Navigate to **API Keys** → **Create Key**
-4. Copy and paste it into your `.env` file
+**Good news!** The app comes with a **pre-configured API key** — no setup needed!
+
+If you want to use your own key:
+1. Get a free key from [OpenRouter](https://openrouter.ai/keys) (recommended!)
+2. Or use [Groq](https://console.groq.com/keys) (free tier available)
+3. Set it as environment variable `OPENROUTER_API_KEY`
 
 ---
 
@@ -147,7 +157,7 @@ neuromind-ai/
 
 ```python
 tech_stack = {
-    "AI Engine":        "Anthropic Claude API (claude-sonnet-4-20250514)",
+    "AI Engine":        "OpenRouter API (Multi-model support)",
     "UI Framework":     "Streamlit 1.35+",
     "Data Processing":  "Pandas + NumPy",
     "Visualizations":   "Plotly Express",
@@ -231,9 +241,9 @@ Edit `config.py` or set environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Your Claude API key | Required |
-| `MODEL_NAME` | Claude model to use | `claude-sonnet-4-20250514` |
-| `MAX_TOKENS` | Max response tokens | `2048` |
+| `OPENROUTER_API_KEY` | Your OpenRouter API key | Pre-configured ✅ |
+| `MODEL_NAME` | AI model to use | `meta-llama/llama-3.1-8b-instruct` |
+| `MAX_TOKENS` | Max response tokens | `4096` |
 | `TEMPERATURE` | Response creativity (0-1) | `0.7` |
 | `MAX_MEMORY_TURNS` | Conversation turns to remember | `20` |
 
@@ -275,7 +285,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 - [ ] 🧩 Plugin system for custom tools
 - [ ] 📱 Mobile-responsive UI improvements
 - [ ] 🐳 Docker containerization
-- [ ] ☁️ One-click Streamlit Cloud deployment
+- [x] ☁️ One-click Streamlit Cloud deployment ✅
 - [ ] 🔗 LangChain integration
 - [ ] 💾 PostgreSQL conversation persistence
 
@@ -289,7 +299,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## 🙏 Acknowledgements
 
-- [Anthropic](https://www.anthropic.com/) for the incredible Claude API
+- [OpenRouter](https://openrouter.ai/) for multi-model AI access
 - [Streamlit](https://streamlit.io/) for the amazing app framework
 - The open-source Python community 💙
 
