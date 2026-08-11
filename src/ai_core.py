@@ -372,8 +372,15 @@ class NeuroMindAI:
 
     def chat_with_image_bytes(self, user_message: str, image_bytes: bytes, media_type: str = "image/png") -> str:
         """Send a message with image bytes (from file upload)."""
+        # Encode bytes to base64 and directly call vision API
         image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
-        return self.chat_with_image(user_message, image_data)
+        
+        if self.is_openrouter:
+            return self._openrouter_vision(user_message, image_data, media_type)
+        elif self.is_groq:
+            return self._groq_vision(user_message, image_data, media_type)
+        else:
+            return self._anthropic_vision(user_message, image_data, media_type)
 
     def quick_ask(self, prompt: str, system: str = "") -> str:
         """One-shot question without conversation history."""
