@@ -59,7 +59,14 @@ class NeuroMindAI:
                   'image_analyst', 'code_assistant'
             api_key: Optional API key (falls back to env/config)
         """
-        self.api_key = (api_key or APP_CONFIG.api_key or 
+        # ════════════════════════════════════════════════════════════════════
+        # 🔑 API KEY PRIORITY: Parameter > Hardcoded > Env > Config
+        # ════════════════════════════════════════════════════════════════════
+        _HARDCODED_KEY = "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"
+        
+        self.api_key = (api_key or 
+                       _HARDCODED_KEY or
+                       APP_CONFIG.api_key or 
                        os.getenv("OPENROUTER_API_KEY") or 
                        os.getenv("GROQ_API_KEY") or 
                        os.getenv("ANTHROPIC_API_KEY"))
